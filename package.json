@@ -1,11 +1,14 @@
 {
   "name": "vanilla-basic",
   "version": "1.0.0",
-  "scripts": { 
+  "scripts": {
     "start": "sirv ./src public --cors --single --no-clear --port 8000",
-    "playwright_test" : "playwright test"
+    "playwright_test": "playwright test"
   },
   "devDependencies": {
     "@playwright/test": "^1.22.2"
+  },
+  "dependencies": {
+    "axios": "^1.1.3"
   }
 }

@@ -5,20 +5,121 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="styles.css">
-    <title>Vanilla JavaScript App</title>
+    <title>Metaverse moderator</title>
 </head>
 
 <body>
     <main>
-    <h1>Vanilla JavaScript App</h1>
-    <p>Loading content from the API: <b id="name">...</b></p>
+    <h1>Metaverse Moderator</h1>
+    
+    <h2 style="float:left">
+        Dashboard
+
+        <p>
+            Pending review - blocked due to 
+        </p>
+        <button id="refresh" type="submit">Refresh</button>
+    </h2>
+    
+        
+    
+
+    <div style="clear:both;"></div>
+
+    <div style="clear:both;"></div>
+
+    <h2>Testing</h2>
+    <div id="submission">
+        <div style="padding:1em">
+            <p>
+                Enter your
+                <select name="actions">
+                    <optgroup label="">
+                        <option value="submitStory">story</option>>
+                        <option>review</option>>
+                    </optgroup>
+                </select>
+            </p>
+            <textarea id="testDocument"></textarea>
+            <p>
+                <button type="button" onclick="submitStory('story')">Submit</button> to see feedback user would get
+            </p>
+            
+        </div>
+    </div>
+    <div id="response">
+        <div style="padding:1em">
+            <p>Expert.ai responses</p>
+            <p id="feedback">Feedback will appear here</p>
+        </div>
+        
+    </div>
+    
+    
     </main>
 
     <script>
-    (async function() {
-        const { text } = await( await fetch(`/api/message`)).json();
-        document.querySelector('#name').textContent = text;
-    }());
+
+    async function Test() {
+        
+        var res = await fetch(`/api/message`);
+        
+        var jsonResp="";
+        res.json()
+        .then (json => {
+            if (json.data !== undefined)
+                jsonResp = json.data;
+            else
+                jsonResp = json;
+            document.querySelector('#feedback').textContent = JSON.stringify(jsonResp);
+        })
+        .catch(error => {
+            jsonResp = "Invalid value returned";
+        });
+                
+    };
+
+    async function submitStory(callType) {
+
+        var res = await fetch(`/api/message`,
+        {
+            method: "post",
+            body: JSON.stringify(
+                {
+                    function: callType,
+                    document: document.getElementById("testDocument").value
+                }
+            ),
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        var jsonResp="";
+        res.json()
+        .then (json => {
+            if (json.data !== undefined)
+                jsonResp = json.data;
+            else
+                jsonResp = json;
+            document.querySelector('#feedback').textContent = JSON.stringify(jsonResp);
+        })
+        .catch(error => {
+            jsonResp = "Invalid value returned";
+        });
+                
+    };    
+
+
+    function DescribeObject(obj)
+    {
+        for(var name in obj) {
+            console.log(name);
+            var value = res[name];
+            console.log(value);
+        }     
+    }
     </script>
 </body>
 

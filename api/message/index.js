@@ -1,20 +1,65 @@
-/*
-module.exports = async function (context, req) {
-    context.log('JavaScript HTTP trigger function processed a request.');
+module.exports = async function (context, req)
+{
 
-    const name = (req.query.name || (req.body && req.body.name));
-    const responseMessage = name
-        ? "Hello, " + name + ". This HTTP triggered function executed successfully."
-        : "This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response.";
+    var token = await GetToken();
+    var response = await AnalyseDocument(token,req.body.document);
+    
+    if (typeof(response) ==  "string") // This happens if an error message is returned
+        response = JSON.stringify(response);
 
-    context.res = {
-        // status: 200, // Defaults to 200
-        body: responseMessage
+    console.log(response);
+    context.res.body = response; // Needs to be a valid JSON object or an error message string
+
+};
+
+const GetToken = async () =>
+{
+    var response = '';
+    const axios = require('axios');
+    
+    // POST request using axios with set headers
+    const inputs = {username:  process.env["expertAiUsername"], password: process.env["expertAiPassword"]};
+    const config = { 
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json; charset=utf-8'
+        },
+        forcedJSONParsing: false
     };
-}
-*/
-module.exports = async function (context, req) {
-    context.res.json({
-        text: "Hello from the API"
-    });
+    try {
+        response = await axios.post('https://developer.expert.ai/oauth2/token', inputs, { config } );
+        response = response.data;
+    } catch (err)
+    {
+        response = "ERROR";
+    }
+    return response;
+    
+};
+
+const AnalyseDocument = async (token, doc) =>
+{
+    const axios = require('axios');
+
+    const inputs = {
+        document: {
+            text: doc
+        }
+    };
+    const config = { 
+        headers: {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/json; charset=utf-8',
+        },
+        forcedJSONParsing: false
+    };
+
+    try {
+        response = await axios.post('https://nlapi.expert.ai/v2/analyze/standard/en/entities', inputs, config);
+        response = response.data;
+    } catch (err)
+    {
+        response = "ERROR";
+    }
+    return response;
 };

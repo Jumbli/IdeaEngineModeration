@@ -49,7 +49,15 @@
     </div>
     <div id="response">
         <div style="padding:1em">
-            <p>Expert.ai responses</p>
+            <p>Status:
+                <b id="status"></b>
+            </p>
+            <p>
+                Summary of issues:
+                <br/>
+                <select id="summary"><select>
+
+            </p>
             <p id="feedback">Feedback will appear here</p>
         </div>
         
@@ -60,27 +68,9 @@
 
     <script>
 
-    async function Test() {
-        
-        var res = await fetch(`/api/message`);
-        
-        var jsonResp="";
-        res.json()
-        .then (json => {
-            if (json.data !== undefined)
-                jsonResp = json.data;
-            else
-                jsonResp = json;
-            document.querySelector('#feedback').textContent = JSON.stringify(jsonResp);
-        })
-        .catch(error => {
-            jsonResp = "Invalid value returned";
-        });
-                
-    };
-
     async function submitStory(callType) {
 
+        
         var res = await fetch(`/api/message`,
         {
             method: "post",
@@ -96,6 +86,8 @@
             }
         });
         
+        
+        
         var jsonResp="";
         res.json()
         .then (json => {
@@ -103,13 +95,53 @@
                 jsonResp = json.data;
             else
                 jsonResp = json;
+            updateSummary(jsonResp);
             document.querySelector('#feedback').textContent = JSON.stringify(jsonResp);
         })
         .catch(error => {
             jsonResp = "Invalid value returned";
         });
-                
+        
+    };
+
+    function updateSummary(res)
+    {
+        /*
+        // Test data
+        var res = {
+            "sentiment":"",
+            "emotionalTraits":"",
+            "hateSpeach":"",
+            "pii":"IBAN=>GB24BKEN10000031510604@|@email=>sdf@test.com@|@creditDebitNumber=>5105105105105100@|@IP=>192.128.56.4@|@telephone=>0114 2830832@|@telephone=>0334 2830832@|@URL=>www.jumblivr.com@|@"
+        } 
+        */   
+        document.getElementById('status').innerHTML = res.status;
+        var summary = document.getElementById('summary');
+        summary.innerHTML="<option value='0'></option>";
+        
+        // Add PII
+        var optGroup = document.createElement('optgroup')
+        optGroup.label = "Personal information";
+        summary.appendChild(optGroup);
+        
+        var bits = res.pii.split("@|@");
+        var bits2;
+        
+        if (bits.length <= 1)
+            AddOption(optGroup,"no issues");
+
+        for (var i=0;i<bits.length -1;i++) {
+            AddOption(optGroup,bits[i]);
+        }
+        document.querySelector('#feedback').textContent = JSON.stringify(res);  
     };    
+    function AddOption(optGroup, text)
+    {
+        var objOption=document.createElement("option");
+        objOption.innerHTML = text;
+        objOption.value = summary.options.length;
+        optGroup.appendChild(objOption);
+    }
 
 
     function DescribeObject(obj)

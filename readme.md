@@ -43,5 +43,7 @@ Example response format:
 ```
 
 ## Next steps:
-An Azure queue will be used instead of a table.
-Security will be further considered.
+- Investigate further classifications using Expert.ai's additional APIs.
+- Add security layers.
+- Fine tune logic of when stories require moderation.
+- Release Idea engine with MeMo fully integrated.

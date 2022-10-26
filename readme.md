@@ -19,27 +19,28 @@ See https://devpost.com/software/metaverse-moderation
 The "message" web service is the core entry point for analysing text based content.
 See script.js in the web app for examples on how it is consumed.
 
+```
 Request format
 {
-    "function": AnalyseDocument, // or AnalyseReview
-    ""document", "All document text here"
+    "function": "AnalyseDocument", // or AnalyseReview
+    "document", "All document text here"
 }
 
 Example response format:
 {
-    "status":"Blocked",
-    "sentiment":"neutral",
+    "status":"Blocked", // or OK
+    "sentiment":"neutral", // or positive or negative
     "sentimentScore":-2.4,
-    "emotionalTraits":"Resentment",
+    "emotionalTraits":"Resentment, Delite",
     "hateCategories":"Racism, Threat and Violence",
-    "hateExtractions":[
+    "hateExtractions":[ // category and problem text
         {"name":"hate","value":"i hate people like you"},
         {"name":"violence","value":"i will murder you"}],
-    "pii":[
+    "pii":[ // category and problem text
         {"name":"email","value":"me@email.com"},
         {"name":"telephone","value":"01143 678765"}]}
 }
-
+```
 
 ## Next steps:
 An Azure queue will be used instead of a table.

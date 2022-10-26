@@ -1,51 +1,146 @@
 module.exports = async function (context, req)
 {
+    const codes = 
+    {
+        "1000": "Personal Insult",
+        
+        "2100": "Racism",
+        "2200": "Sexism",
+        "2300": "Ableism",
+        "2400": "Religious Hatred",
+        "2500": "Homophobia",
+        "2600": "Classism",
+        "2700": "Body Shaming",
+        "3000": "Threat and Violence",
+        // Emotional traits
+        "0100": "Rage",
+        "0200": "Apprehension",
+        "0300": "Distress",
+        "0400": "Resentment",
+        "0500": "Dejection",
+        "0600": "Surprise",
+        "0700": "Delight",
+        "0800": "Fondness"
+        
+    }
     const sentimentUrl = "analyze/standard/en/sentiment";
     const emotionalTraitsUrl = "categorize/emotional-traits/en?features=extradata";
     const piiUrl = "detect/pii/en";
     const hateSpeachUrl = "detect/hate-speech/en";
 
     var status='OK';
+    var apiRequired="";
+ 
     var sentimentResponse="";
+    var sentimentScoreResponse = "0";
     var emotionalTraitsResponse="";
     var hateSpeachResponseExtractions="";
     var hateSpeachResponseCategories="";
-    var piiResponse="";
+    var piiExtractions=[];
 
     var response="";
     var token = await GetToken(context);
 
+
+    // Sentiment
     response = await AnalyseDocument(context,token,req.body.document, sentimentUrl);
-    sentimentResponse = response.data.data.sentiment.overall;
+    sentimentScoreResponse = response.data.data.sentiment.overall;
+    sentimentResponse = "neutral";
+    if (parseInt(sentimentScoreResponse) > 3)
+        sentimentResponse = "positive";
+    if (parseInt(sentimentScoreResponse) < -3)
+        sentimentResponse = "negative";
+        
+    var level1Count = 0; 
+    // Emotional traits
+    if (req.body.function == "AnalyseDocument") {
+        var response = await AnalyseDocument(context,token,req.body.document, emotionalTraitsUrl);
+        var groups = response.data.data.extraData.groups;
+        var words = [];
+        for (var i=0;i<groups.length;i++)
+        {
+            if (groups[i].position == 1)
+                level1Count++;
+            var c = codes[groups[i].id];
+            if (words.includes(c) == false)
+                words.push(c)
+        }
+        
+        //Sometimes short responses give erroneous results, so this works around that issue
+        if (groups.length >= 8 && level1Count == groups.length)
+            emotionalTraitsResponse="";
+        else
+            emotionalTraitsResponse = words.join(", ");
+    }
     
-    var response = await AnalyseDocument(context,token,req.body.document, emotionalTraitsUrl);
-    emotionalTraitsResponse = response.data.data.extraData;
 
-    var response = await AnalyseDocument(context,token,req.body.document, hateSpeachUrl);
-    hateSpeachResponseExtractions = response.data.data.extractions;
-    hateSpeachResponseCategories = response.data.data.categories;
+    // Hate speech
+    response = await AnalyseDocument(context,token,req.body.document, hateSpeachUrl);
+    var ext = response.data.data.extractions;
+    hateSpeachResponseExtractions = [];
 
-    var response = await AnalyseDocument(context,token,req.body.document, piiUrl);
+    for (var i=0;i<ext.length;i++)
+    {
+        var fields = ext[i].fields;
+        for (var j=0;j<fields.length;j++)
+        {
+            var category = fields[j].name;
+            if (category.indexOf("target") < 0)
+            {
+                if (category.indexOf("full") >= 0)
+                    category = "hate";
+                hateSpeachResponseExtractions.push(
+                {
+                    name: category,
+                    value: fields[j].value
+                });
+            }
+        }
+    }
+
+     
+    var groups = response.data.data.categories;
+    var words = [];
+    for (var i=0;i<groups.length;i++)
+    {
+        var c = codes[groups[i].id];
+        if (words.includes(c) == false)
+            words.push(c)
+    }
+    var hateSpeachResponseCategories = words.join(", ");
+
+    
+
+    // PII
+    response = await AnalyseDocument(context,token,req.body.document, piiUrl);
     pii = response.data.data.extractions;
     
-    var piiWanted = "|fin|tel|url|ema|ban|ip"; // financial / telephone / url / email / bank / ip - all block release
+    piiWanted = "|fin|tel|url|ema|ban|ip"; // financial / telephone / url / email / bank / ip - all block release
+    piiExtractions = [];
     for (var i=0;i<pii.length;i++) 
     {
         var test=pii[i].template.toLowerCase().substring(4,7);
         
-        if (piiWanted.indexOf(test)) { // Check for most dangerous subset of PII
-            piiResponse += pii[i].fields[0].name + "=>" + pii[i].fields[0].value + "@|@";
-            status = "Blocked pending review";
+        if (piiWanted.indexOf(test) >= 0) { // Check for most dangerous subset of PII
+            piiExtractions.push(
+            {
+                name: pii[i].fields[0].name,
+                value: pii[i].fields[0].value
+            });
         }
     }
-    
+
+    if ((req.body.function == "AnalyseReview" && hateSpeachResponseExtractions.length > 0) || piiExtractions.length > 0)
+        status = "Blocked";
 
     var fullResponse = {
         status: status,
         sentiment: sentimentResponse,
+        sentimentScore: sentimentScoreResponse,
         emotionalTraits: emotionalTraitsResponse,
         hateCategories: hateSpeachResponseCategories,
-        hateExtractions: hateSpeachResponseExtractions
+        hateExtractions: hateSpeachResponseExtractions,
+        pii: piiExtractions
     }
 
     
@@ -60,16 +155,12 @@ module.exports = async function (context, req)
 
 const GetToken = async (context) =>
 {
-    context.log.info("in getToken");
+
     var response = '';
     const axios = require('axios');
-    context.log.info("loaded axios");
-    
-    
-    context.log.info("set username is" + process.env["expertAiUsername"]);
+
     // POST request using axios with set headers
     const inputs = {username:  process.env["expertAiUsername"], password: process.env["expertAiPassword"]};
-    context.log.info("set inputs");
     const config = { 
         headers: {
             'Accept': 'application/json',
@@ -77,7 +168,7 @@ const GetToken = async (context) =>
         },
         forcedJSONParsing: false
     };
-    context.log.info("set headers");
+    
     try {
         response = await axios.post('https://developer.expert.ai/oauth2/token', inputs, { config } );
         response = response.data;
@@ -118,3 +209,5 @@ const AnalyseDocument = async (context, token, doc, urlSuffix) =>
     }
     return response;
 };
+
+    

@@ -1,8 +1,4 @@
 module.exports = async function (context, req) {
-    context.log('JavaScript HTTP trigger function processed a request.');
-
-    
-    //const { TableServiceClient, AzureNamedKeyCredential } = require("@azure/data-tables");
     
     const { TableClient, AzureNamedKeyCredential } = require("@azure/data-tables");
     
@@ -10,22 +6,15 @@ module.exports = async function (context, req) {
     const accountKey = process.env["storageAccountKey"];
     
     const credential = new AzureNamedKeyCredential(account, accountKey);
-    /*
-    const serviceClient = new TableServiceClient(
-        process.env["storageUri"],
-        credential
-    );
-    */
 
     const tableClient = new TableClient(process.env["storageUri"], process.env["tableName"], credential);
-
   
     var keys = [];
     let entitiesIter = tableClient.listEntities();
     let i = 0;
     for await (const entity of entitiesIter) {
         keys.push(entity.rowKey);
-        if (i > 5)
+        if (i > req.body.maxRows)
             break;
         i++;
     }

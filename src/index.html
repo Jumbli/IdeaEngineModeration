@@ -5,154 +5,177 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="styles.css">
+    <script src="script.js" type="text/javascript"></script>
     <title>Metaverse moderator</title>
 </head>
 
 <body>
     <main>
-    <h1>Metaverse Moderator</h1>
-    
-    <h2 style="float:left">
-        Dashboard
-
+    <h1>Metaverse Moderator (MeMo) Demo</h1>
+    <div id="notice">
         <p>
-            Pending review - blocked due to 
+            View <a href="https://github.com/Jumbli/IdeaEngineModeration">source code</a>, 
+            watch the <a href="">video</a> to see the VR integration in action,<br/>
+            then moderate the sample posts below, created from within VR.
         </p>
-        <button id="refresh" type="submit">Refresh</button>
+        <p>
+             Database updates are currently disabled to retain the VR sample data.
+        </p>
+    </div>
+    
+    <h2>
+        Moderation queue
+        <span style="font-size:.8em">
+            <button type="button" class="help" onclick="popup('hModeration')">?</button>
+        </span>
     </h2>
     
-        
-    
+    <table id="queue" cellpadding="10px">
+        <thead id="template"style="display:none">
+            <tr>
+                <td style="display:none">id</td>
+                <td>Title</td>
+                <td>Status</td>
+                <td></td>
+                <td>
+                    <input type="hidden" value=""/>
+                </td>
+                <td>
+                    <button type="button" onclick="Fetch(this);">Fetch</button>
+                </td>
+                <td>
+                    <button type="button" onclick="Approve(this);">Approve</button>
+                </td>
+                <td>
+                    <button type="button" onclick="Reject(this)">Reject</button>
+                </td>
+                    
+                </td>
+            </tr>
+        </thead>
+        <tbody id="rows">
 
+        </tbody>
+    </table>
+    <p>
+    <button id="refresh" type="button" onclick="GetModerationQueue()">Refresh moderation queue</button>
+    <span id="refreshing" style="display:none">Fetching data...</span>
+    </p>
     <div style="clear:both;"></div>
 
     <div style="clear:both;"></div>
 
-    <h2>Testing</h2>
+    <h2 id="analyse" style="margin-top:2em">Analyse <span>Fetch from the moderation queue or enter your own for testing</span></h2>
     <div id="submission">
         <div style="padding:1em">
             <p>
-                Enter your
-                <select name="actions">
+                <label>Validate as a </label>
+                <select id="action" name="action" onchange="swapOutputPanel(this)">
                     <optgroup label="">
-                        <option value="submitStory">story</option>>
-                        <option>review</option>>
+                        <option value="AnalyseDocument">story</option>>
+                        <option value="AnalyseReview">review</option>>
                     </optgroup>
                 </select>
             </p>
-            <textarea id="testDocument"></textarea>
+            <textarea id="testDocument">Fetch a story from the moderation queue or paste in your own text to simulate submissions from VR.</textarea>
             <p>
-                <button type="button" onclick="submitStory('story')">Submit</button> to see feedback user would get
+                <button id="submit" type="button" onclick="submitStory()">Submit</button> 
+                <label>to see feedback user would get</label>
             </p>
             
         </div>
     </div>
     <div id="response">
         <div style="padding:1em">
-            <p>Status:
-                <b id="status"></b>
+            <p>
+                <button type="button" class="help" onclick="popup('hStatus')">?</button>
+                <label>Status:</label>
+                <span id="status">N/A</span>
+            </p>
+
+            <p>
+                <button type="button" class="help" onclick="popup('hSentiment')">?</button>
+                <label>Sentiment is emotionally</label>
+                <span class="hb" span id="sentiment"></span>
+            </p>            
+
+            <div id="traitDetails">
+                <p>
+                    <button type="button" class="help" onclick="popup('hHate')">?</button>
+                    <label>May include depictions of:</label>
+                </p>
+                <p class="hb" span id="hate"></p>
+
+                <p>
+                    <button type="button" class="help" onclick="popup('hEmotionalTraits')">?</button>
+                    <label>Emotional traits (in order of frequency):</label>
+                </p>
+                <p class="hb" span id="traits"></p>
+            </div>
+
+            <p>
+                <label>Summary of issues:</label>
+            </p>
+            <p class="hb">
+                <button type="button" class="help" onclick="popup('hIssues')">?</button>
+                <select id="summary" onchange="FindText(this)">
+                    <option>Issues will be listed here</option>
+                <select>                 
             </p>
             <p>
-                Summary of issues:
-                <br/>
-                <select id="summary"><select>
-
+                <label>Select an issue above, to find it in the document</label>
             </p>
-            <p id="feedback">Feedback will appear here</p>
+                
+
+            <p>
+                <button type="button" onclick="ToggleFeedback()">Toggle API response display</button>
+            </p>
+            <textarea readonly="readonly" style="display:none" id="feedback">API payload will appear here</textarea>
         </div>
         
     </div>
     
-    
+    <div style="clear:both"></div>
     </main>
 
-    <script>
-
-    async function submitStory(callType) {
-
-        
-        var res = await fetch(`/api/message`,
-        {
-            method: "post",
-            body: JSON.stringify(
-                {
-                    function: callType,
-                    document: document.getElementById("testDocument").value
-                }
-            ),
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            }
-        });
-        
-        
-        
-        var jsonResp="";
-        res.json()
-        .then (json => {
-            if (json.data !== undefined)
-                jsonResp = json.data;
-            else
-                jsonResp = json;
-            updateSummary(jsonResp);
-            document.querySelector('#feedback').textContent = JSON.stringify(jsonResp);
-        })
-        .catch(error => {
-            jsonResp = "Invalid value returned";
-        });
-        
-    };
-
-    function updateSummary(res)
-    {
-        /*
-        // Test data
-        var res = {
-            "sentiment":"",
-            "emotionalTraits":"",
-            "hateSpeach":"",
-            "pii":"IBAN=>GB24BKEN10000031510604@|@email=>sdf@test.com@|@creditDebitNumber=>5105105105105100@|@IP=>192.128.56.4@|@telephone=>0114 2830832@|@telephone=>0334 2830832@|@URL=>www.jumblivr.com@|@"
-        } 
-        */   
-        document.getElementById('status').innerHTML = res.status;
-        var summary = document.getElementById('summary');
-        summary.innerHTML="<option value='0'></option>";
-        
-        // Add PII
-        var optGroup = document.createElement('optgroup')
-        optGroup.label = "Personal information";
-        summary.appendChild(optGroup);
-        
-        var bits = res.pii.split("@|@");
-        var bits2;
-        
-        if (bits.length <= 1)
-            AddOption(optGroup,"no issues");
-
-        for (var i=0;i<bits.length -1;i++) {
-            AddOption(optGroup,bits[i]);
-        }
-        document.querySelector('#feedback').textContent = JSON.stringify(res);  
-    };    
-    function AddOption(optGroup, text)
-    {
-        var objOption=document.createElement("option");
-        objOption.innerHTML = text;
-        objOption.value = summary.options.length;
-        optGroup.appendChild(objOption);
-    }
+    <div id="popup1" class="overlay">
+        <div class="popup">
+            <button stlye="float:right" type="button" class="close help" onclick="document.getElementById('popup1').style.visibility='hidden'">X</button>
+            <div class="content" id="popupContent">
+                <div id="hStatus">
+                    <p>
+                        Status will be <b>Blocked</b> if selected private information is found, such as bank details, emails and urls.
+                        Or if frequence hate speech and negative sentiment is present.
+                    </p>
+                    <p>For reviews we also block if any hate speech is found. Hate speach may be valid in the context of a story.</p>
+                </div>
+                <div id="hSentiment">
+                    <p>Large negative values may indicate more likely cases of abuse.</p>
+                    <p>It's shown on story summaries to help users decide if it suit them.</p>
+                    <p>It's also accumulated for reviews. This is experimental and it will be interesting to see how sentiment scores match up with typical 5-star ratings.</p>
+                </div>
+                <div id="hHate">
+                    <p>Hate speech categories are shown to users to highlight what content you may experience in a story. Simiar to content guidelines seen before some TV shows.</p>
+                </div>                
+                <div id="hEmotionalTraits">
+                    <p>These keywords give an indication of what a story will be like before you invest time into reading it.</p>
+                    <p>It will be shown to users to help them pick experiences that suit them or their current mood much better.</p>
+                </div>                
+                <div id="hIssues">
+                    <p>Select issues to have the problem text highlighted in the story. This is important because it means you can review the problem text within the context of the story before you approve or reject it.</p>
+                </div>
+                <div id="hModeration">
+                    <p>Shows stories from the metaverse that have been flagged for your attension.</p>
+                    <p><b>OK</b> These stories have been auto approved but are viewed as high risk due to hate speech and negative sentiment</p>
+                    <p><b>Blocked</b> These stories will have been blocked because they containing certain personal information or because they are high risk due to the amount of hate speech.</p>
+                    <p><b>Reported</b> These stories are currently approved, but someone has reported them for hate speech.</p>
+                    <p>Fetch a story into the "analyse" window then submit it to see the full analysis and then decide to <b>approve</b> or <b>reject</b> it.</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
 
-    function DescribeObject(obj)
-    {
-        for(var name in obj) {
-            console.log(name);
-            var value = res[name];
-            console.log(value);
-        }     
-    }
-    </script>
 </body>
 
 </html>

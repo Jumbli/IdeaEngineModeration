@@ -41,11 +41,12 @@ Example response format:
         {"name":"email","value":"me@email.com"},
         {"name":"telephone","value":"01143 678765"}]}
 }
-```
 
+```
 ## Azure Configuration
 Create a table for the queue, later will be changed to "queue storage".
 Configure the following:
+```
     "expertAiUsername": "",
     "expertAiPassword": "",
     "accountName": "", // General Azure settings
@@ -53,6 +54,7 @@ Configure the following:
     "storageUri": "", // General Azure settings
     "tableName": "ModerationQueue", 
     "MeMoKey": ""
+```
 
 ## Next steps:
 - Investigate further classifications using Expert.ai's "Document classification" API.

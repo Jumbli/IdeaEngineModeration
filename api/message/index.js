@@ -131,18 +131,22 @@ module.exports = async function (context, req)
     }
 
     var status='OK';
-    if ((req.body.function == "AnalyseReview" && hateSpeachResponseExtractions.length > 0) || piiExtractions.length > 0)
-        status = "Blocked"; // Pii found or zero tollerance hate speach in reviews
-    else {
-        if (sentimentScoreResponse < -15 || 
-            (hateSpeachResponseCategories != "" && sentimentScoreResponse < -.5))
-            status = "Blocked - negative";
+    if (piiExtractions.length > 0)
+        status = "Blocked - PII"; // sensitive personal data found or URLs
+    else
+    {
+        if ((req.body.function == "AnalyseReview" && hateSpeachResponseExtractions.length > 0))
+            status = "Blocked - hate"; // Zero tollerance hate speach in reviews
         else {
-            if (hateSpeachResponseExtractions.length > 0)
-                status = "OK - check it"
+            if (sentimentScoreResponse < -15 || 
+                (hateSpeachResponseCategories != "" && sentimentScoreResponse < -.5))
+                status = "Blocked - negative";
+            else {
+                if (hateSpeachResponseExtractions.length > 0)
+                    status = "OK - check for hate"
+            }
         }
     }
-
 
 
     var fullResponse = {
@@ -213,11 +217,12 @@ const AnalyseDocument = async (context, token, doc, urlSuffix) =>
     try {
         response = await axios.post("https://nlapi.expert.ai/v2/" + urlSuffix, inputs, config);
         //response = await axios.get("https://nlapi.expert.ai/v2/detectors", inputs, config);
-        //console.log(response.data);
         
     } catch (err)
     {
         response = err;
+        console.log(err);
+        context.log(err);
     }
     return response;
 };

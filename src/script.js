@@ -7,6 +7,7 @@ async function submitStory(callType)
         method: "post",
         body: JSON.stringify(
             {
+                MeMoKey: "kljherkjqmervchqrmiquwh4rcuqwe5743jcq4508943qcj43jc",
                 function: document.getElementById("action").value,
                 document: document.getElementById("testDocument").value
             }
@@ -97,6 +98,7 @@ async function GetModerationQueue(callType) {
         method: "post",
         body: JSON.stringify(
             {
+                MeMoKey: "kljherkjqmervchqrmiquwh4rcuqwe5743jcq4508943qcj43jc",
                 maxRows: 5
             }
         ),

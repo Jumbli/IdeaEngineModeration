@@ -20,12 +20,14 @@ module.exports = async function (context, req) {
     }
 
     var rows = [];
-    for (i=0;i<keys.length;i++)
+    if (req.body.MeMoKey == process.env["MeMoKey"])
     {
-        var row = await tableClient.getEntity("mainPartition", keys[i])
-        rows.push(row);
+        for (i=0;i<keys.length;i++)
+        {
+            var row = await tableClient.getEntity("mainPartition", keys[i])
+            rows.push(row);
+        }
     }
-    
     var fullResponse = {
         rows: rows,
         };

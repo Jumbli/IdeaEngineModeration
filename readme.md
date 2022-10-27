@@ -9,7 +9,7 @@ Further details can be found at: https://docs.expert.ai/nlapi/latest/
 
 Azure static web apps, storage solutions and web functions are used to provide the VR integration and moderation platform.
 
-## Demo
+## Demo & Video Link
 Demo https://icy-beach-02d319c0f.2.azurestaticapps.net/
 
 ## Detailed description
@@ -17,11 +17,12 @@ See https://devpost.com/software/metaverse-moderation
 
 ## Message - analysis service
 The "message" web service is the core entry point for analysing text based content.
-See script.js in the web app for examples on how it is consumed.
+See script.js in the web app for examples on how it is consumed. Call this from your VR app.
 
 ```
 Request format
 {
+    "MeMoKey": "YourKey" // key configured in MeMoKey
     "function": "AnalyseDocument", // or AnalyseReview
     "document", "All document text here"
 }
@@ -42,8 +43,19 @@ Example response format:
 }
 ```
 
+## Azure Configuration
+Create a table for the queue, later will be changed to "queue storage".
+Configure the following:
+    "expertAiUsername": "",
+    "expertAiPassword": "",
+    "accountName": "", // General Azure settings
+    "storageAccountKey": "", // General Azure settings
+    "storageUri": "", // General Azure settings
+    "tableName": "ModerationQueue", 
+    "MeMoKey": ""
+
 ## Next steps:
-- Investigate further classifications using Expert.ai's additional APIs.
-- Add security layers.
+- Investigate further classifications using Expert.ai's "Document classification" API.
+- Add additional web service for QueueSumbission rather than the VR app writing to the table.
 - Fine tune logic of when stories require moderation.
-- Release Idea engine with MeMo fully integrated.
+- Release Idea engine with MeMo fully integrated to test and improve.

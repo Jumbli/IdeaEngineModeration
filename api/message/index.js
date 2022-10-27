@@ -28,7 +28,7 @@ module.exports = async function (context, req)
     const piiUrl = "detect/pii/en";
     const hateSpeachUrl = "detect/hate-speech/en";
 
-    var status='OK';
+    
     var apiRequired="";
  
     var sentimentResponse="";
@@ -130,8 +130,20 @@ module.exports = async function (context, req)
         }
     }
 
+    var status='OK';
     if ((req.body.function == "AnalyseReview" && hateSpeachResponseExtractions.length > 0) || piiExtractions.length > 0)
-        status = "Blocked";
+        status = "Blocked"; // Pii found or zero tollerance hate speach in reviews
+    else {
+        if (sentimentScoreResponse < -15 || 
+            (hateSpeachResponseCategories != "" && sentimentScoreResponse < -.5))
+            status = "Blocked - negative";
+        else {
+            if (hateSpeachResponseExtractions.length > 0)
+                status = "OK - check it"
+        }
+    }
+
+
 
     var fullResponse = {
         status: status,
